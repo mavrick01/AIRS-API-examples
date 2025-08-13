@@ -39,6 +39,7 @@ python syncscan.py  "prompt"
 python syncscan.py  -p "prompt"
 python syncscan.py  -r "response"
 python syncscan.py  -p "prompt" -r "response" -c "context"
+python your_script_name.py -p "prompt" -m app_name=my_app app_user=test_user ai_model=OLLAMA user_ip=1.2.3.4
 ```
 
 ### `asyncscan.py`
