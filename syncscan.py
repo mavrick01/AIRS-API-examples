@@ -30,6 +30,7 @@ parser = argparse.ArgumentParser(
     python your_script_name.py "this is a simple prompt"
     python your_script_name.py -p "this is a prompt" -r "this is a response"
     python your_script_name.py -p "prompt" -r "response" -c "some context"
+    python your_script_name.py -p "prompt" -m app_name=my_app app_user=test_user
     """,
     formatter_class=argparse.RawTextHelpFormatter
 )
@@ -42,6 +43,11 @@ parser.add_argument(
 parser.add_argument('-p', '--prompt', help="The prompt text to scan.")
 parser.add_argument('-r', '--response', help="The response text to scan.")
 parser.add_argument('-c', '--context', help="The context for the scan.")
+parser.add_argument(
+    '-m', '--metadata',
+    nargs='*',
+    help='A list of metadata key-value pairs (e.g., app_name=my_app user_ip=1.2.3.4). Supported keys are: app_name, app_user, ai_model, user_ip'
+)
 
 args = parser.parse_args()
 
@@ -62,6 +68,16 @@ aisecurity.init(api_key=API_KEY)
 prompt_to_scan = args.prompt or args.text
 response_to_scan = args.response
 context_to_scan = args.context
+
+# Prepare metadata if provided
+metadata_to_scan = {}
+if args.metadata:
+    for item in args.metadata:
+        try:
+            key, value = item.split('=', 1)
+            metadata_to_scan[key] = value
+        except ValueError:
+            parser.error(f"Invalid metadata format: {item}. It should be key=value.")
 
 # Check if there is anything to scan. The API requires at least a prompt or response.
 if not prompt_to_scan and not response_to_scan:
@@ -89,10 +105,16 @@ scanner = Scanner()
 
 try:
     print("Scanning content...")
-    scan_response = scanner.sync_scan(
-       ai_profile=ai_profile,
-       content=content_to_scan, # Use the content object created from arguments
-    )
+    
+    scan_args = {
+        "ai_profile": ai_profile,
+        "content": content_to_scan,
+    }
+    if metadata_to_scan:
+        scan_args["metadata"] = metadata_to_scan
+
+    scan_response = scanner.sync_scan(**scan_args)
+
     # See API documentation for response structure
     # https://pan.dev/prisma-cloud/api/cspm/post-scan-sync-request/
     # Convert the scan_response to a dictionary and then to a JSON string
